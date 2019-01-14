@@ -3,7 +3,6 @@ package model;
 import java.io.*;
 import java.lang.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -33,24 +32,37 @@ public class Loader implements ModelLoader {
         catch (EOFException e) {
             return new TreeMap<Genre, ArrayList<Track>>();
         }
+        catch (IOException s) {
+            File file = new File(defaultPathToFile);
+            file.createNewFile();
+            return new TreeMap<Genre, ArrayList<Track>>();
+        }
     }
 
     public void addModel(Genre genre, Track track) throws IOException, ClassNotFoundException {
         modelList = getModel();
         if (modelList.containsKey(genre)) {
             if(!modelList.get(genre).contains(track)) {
-                modelList.get(genre).add(track);
-                saveModel(modelList);
-                result = track.getTitle() + "(" + track.getArtist() + ", " + track.getAlbum() +  ", " + track.getLength() + ")" + ".Добавлен";
+                if (track.getTitle().equals("-") && track.getArtist().equals("-") && track.getAlbum().equals("-") && track.getLength() == 0) {
+                    result = "Такой жанр уже существует!";
+                } else {
+                    modelList.get(genre).add(track);
+                    saveModel(modelList);
+                    result = track.getTitle() + "(" + track.getArtist() + ", " + track.getAlbum() + ", " + track.getLength() + ")" + ".Добавлен";
+                }
             } else {
                 result = "Такой трек уже существует!";
             }
         } else {
             modelList.put(genre, new ArrayList<Track>());
-            modelList.get(genre).add(track);
+            if (!track.getTitle().equals("-") && !track.getArtist().equals("-") && !track.getAlbum().equals("-") && track.getLength() != 0) {
+                modelList.get(genre).add(track);
+                result = genre.getName() + "." + track.getTitle() + "(" + track.getArtist() + ", " + track.getAlbum() +  ", " +
+                        track.getLength() + ")" + ".Добавлен";
+            } else {
+                result = genre.getName() + ".Добавлен";
+            }
             saveModel(modelList);
-            result = genre.getName() + "." + track.getTitle() + "(" + track.getArtist() + ", " + track.getAlbum() +  ", " +
-                    track.getLength() + ")" + ".Добавлен";
         }
     }
 
@@ -58,25 +70,40 @@ public class Loader implements ModelLoader {
         try {
             modelList = getModel();
             if (modelList.containsKey(genre)) {
-                Track oldTrack = modelList.get(genre).get(indexOfTrack);
+                if (indexOfTrack == -1) {
+                        if (modelList.containsKey(new Genre (newGenreName))) {
+                            result = "Ошибка. Такое название жанра уже существует";
+                            return;
+                        } else {
+                            modelList.floorKey(genre).setName(newGenreName);
+                            saveModel(modelList);
+                            result = genre.getName() + ".Изменён";
+                        }
+                } else {
+                    Track oldTrack = modelList.get(genre).get(indexOfTrack);
+                    if (!newGenreName.equals("-")) {
+                        if (modelList.containsKey(new Genre (newGenreName))) {
+                            result = "Ошибка. Такое название жанра уже существует";
+                            return;
+                        }
+                        modelList.floorKey(genre).setName(newGenreName);
+                    }
 
-                if (!newGenreName.equals("-")) {
-                    modelList.floorKey(genre).setName(newGenreName);
+                    if (!newTrack.getTitle().equals("-")) {
+                        oldTrack.setTitle(newTrack.getTitle());
+                    }
+                    if (!newTrack.getArtist().equals("-")) {
+                        oldTrack.setArtist(newTrack.getArtist());
+                    }
+                    if (!newTrack.getAlbum().equals("-")) {
+                        oldTrack.setAlbum(newTrack.getAlbum());
+                    }
+                    if (newTrack.getLength() != 0) {
+                        oldTrack.setLength(newTrack.getLength());
+                    }
+                    result = modelList.floorKey(genre).getName() + "." + oldTrack.getTitle() + "(" + oldTrack.getArtist() + ", " + oldTrack.getAlbum() + ", "
+                            + oldTrack.getLength() + ")" + ".Изменён";
                 }
-                if (!newTrack.getTitle().equals("-")) {
-                    oldTrack.setTitle(newTrack.getTitle());
-                }
-                if (!newTrack.getArtist().equals("-")) {
-                    oldTrack.setArtist(newTrack.getArtist());
-                }
-                if (!newTrack.getAlbum().equals("-")) {
-                    oldTrack.setAlbum(newTrack.getAlbum());
-                }
-                if (newTrack.getLength() != 0) {
-                    oldTrack.setLength(newTrack.getLength());
-                }
-                result = modelList.floorKey(genre).getName() + "." + oldTrack.getTitle() + "(" + oldTrack.getArtist() + ", " + oldTrack.getAlbum() + ", "
-                        + oldTrack.getLength() + ")" + ".Изменён";
                 saveModel(modelList);
             } else {
                 result = "Нет жанра с таким названием!";
@@ -92,13 +119,16 @@ public class Loader implements ModelLoader {
         if (modelList.containsKey(genre)) {
             if (modelList.get(genre).contains(track)) {
                 modelList.get(genre).remove(track);
-                if (modelList.get(genre).size() == 0) {
-                    modelList.remove(genre);
-                }
                 saveModel(modelList);
                 result = track.getTitle() + "(" + track.getArtist() + ", " + track.getAlbum() +  ", " + track.getLength() + ")" + ".Удален";
             } else {
-                result = "Такого трека не существует!";
+                if (track.getTitle().equals("-") && track.getArtist().equals("-") && track.getAlbum().equals("-") && track.getLength() == 0) {
+                    modelList.remove(genre);
+                    saveModel(modelList);
+                    result = genre.getName() + ".Удалён";
+                } else {
+                    result = "Такого трека не существует!";
+                }
             }
         } else {
             result = "Нет жанра с таким названием!";

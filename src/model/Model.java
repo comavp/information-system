@@ -68,7 +68,7 @@ public class Model extends Observable {
             notifyObserver("Произошла ошибка!(ClassNotFoundException)");
         }
         catch (NullPointerException e) {
-            notifyObservers("Произошла ошибка!(NullPointerException)");
+            notifyObserver("Произошла ошибка!(NullPointerException)");
         }
     }
 }

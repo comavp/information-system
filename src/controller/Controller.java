@@ -2,27 +2,32 @@ package controller;
 
 import view.*;
 import model.*;
-
-import java.io.Console;
+import view.fxview.FXViewFacade;
 import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
 
 public class Controller implements Observer
 {
+    private ModelView view;
+    private Model model;
 
-    ModelView view;
-    Model model;
+    public Controller(Model model, FXViewFacade view) throws IOException, ClassNotFoundException {
+        this.model = model;
+        this.view = view;
+        model.addObserver(this);
+        view.addObserver(this);
+    }
 
-    public Controller(Model model, ConsoleView view) throws IOException, ClassNotFoundException{
-        this. model = model;
+    public Controller(Model model, ConsoleView view) throws IOException, ClassNotFoundException {
+        this.model = model;
         this.view = view;
         model.addObserver(this);
         view.addObserver(this);
     }
 
     @Override
-    public void update(Observable o, Object arg){
+    public void update(Observable o, Object arg) {
         if (view.equals(o)) {
             model.helper((String)arg);
         }
